@@ -1,4 +1,4 @@
-package parser
+package resp
 
 import (
 	"bufio"
@@ -15,28 +15,24 @@ func ParseRESP(r *bufio.Reader) (Value, error) {
 	switch prefix {
 	case '+':
 		return parseSimpleString(r)
-	
+
 	case '-':
 		return parseError(r)
-	
+
 	case ':':
 		return parseInteger(r)
-	
+
 	case '$':
 		return parseBulkString(r)
 	case '*':
 		return parseArray(r)
 	default:
-		return Value{}, fmt.Errorf("ERR Protocol Error: invalid_prefix '%c' ", prefix )
+		return Value{}, fmt.Errorf("ERR Protocol Error: invalid_prefix '%c' ", prefix)
 
-	
 	}
 }
 
-
-
-
-func parseSimpleString(r *bufio.Reader) (Value , error ) {
+func parseSimpleString(r *bufio.Reader) (Value, error) {
 	line, err := r.ReadString('\n')
 	if err != nil {
 		return Value{}, err
@@ -58,10 +54,8 @@ func parseSimpleString(r *bufio.Reader) (Value , error ) {
 	}, nil
 }
 
-
-
-func parseError(r *bufio.Reader ) (Value , error ) {
-	line, err :=  r.ReadString('\n')
+func parseError(r *bufio.Reader) (Value, error) {
+	line, err := r.ReadString('\n')
 	if err != nil {
 		return Value{}, err
 
@@ -72,31 +66,22 @@ func parseError(r *bufio.Reader ) (Value , error ) {
 
 	}
 
-
 	error_str := line[:len(line)-2]
-	
+
 	for i := 0; i < len(error_str); i++ {
 		if error_str[i] == '\r' || error_str[i] == '\n' {
 			return Value{}, fmt.Errorf("ERR Protocol Error: control character in Error string")
 		}
 	}
 
-
 	return Value{
 		Type: ErrorType,
-		Str: error_str,
+		Str:  error_str,
 	}, nil
-
-	
-
-
 
 }
 
-
-
-
-func parseInteger(r *bufio.Reader) (Value , error ) {
+func parseInteger(r *bufio.Reader) (Value, error) {
 	line, err := r.ReadString('\n')
 	if err != nil {
 		return Value{}, err
@@ -107,8 +92,6 @@ func parseInteger(r *bufio.Reader) (Value , error ) {
 
 	}
 
-	
-	
 	intStr := line[:len(line)-2]
 	var n int64
 	_, err = fmt.Sscanf(intStr, "%d", &n)
@@ -123,11 +106,11 @@ func parseInteger(r *bufio.Reader) (Value , error ) {
 }
 
 func parseBulkString(r *bufio.Reader) (Value, error) {
-	
+
 	//Read the length line
 	lenLine, err := r.ReadString('\n')
 	if err != nil {
-		return Value{} , err
+		return Value{}, err
 	}
 
 	if len(lenLine) < 2 || lenLine[len(lenLine)-2] != '\r' {
@@ -137,11 +120,10 @@ func parseBulkString(r *bufio.Reader) (Value, error) {
 	lenStr := lenLine[:len(lenLine)-2]
 	var length int64
 	_, err = fmt.Sscanf(lenStr, "%d", &length)
-	
+
 	if err != nil || length < -1 {
 		return Value{}, fmt.Errorf("ERR Protocol Error: invalid length value")
 	}
-
 
 	if length == -1 {
 		return Value{
@@ -166,7 +148,7 @@ func parseBulkString(r *bufio.Reader) (Value, error) {
 		return Value{}, fmt.Errorf("ERR Protocol Error: bulk string length mismatch")
 	}
 
-	for i := 0; i < int(length); i++{
+	for i := 0; i < int(length); i++ {
 		if b_string[i] == '\r' || b_string[i] == '\n' {
 			return Value{}, fmt.Errorf("ERR Protocol Error: control character in Error string")
 		}
@@ -177,21 +159,16 @@ func parseBulkString(r *bufio.Reader) (Value, error) {
 		Bulk: []byte(b_string),
 	}, nil
 
-
-
-
 }
 
-
-
-func parseArray(r *bufio.Reader) ( Value , error ){
+func parseArray(r *bufio.Reader) (Value, error) {
 	//Read the length line
 	countLine, err := r.ReadString('\n')
 	if err != nil {
-		return Value{} , err
+		return Value{}, err
 	}
 
-	if len(countLine) < 2 || countLine[len(countLine)-2] != '\n' {
+	if len(countLine) < 2 || countLine[len(countLine)-2] != '\r' {
 		return Value{}, fmt.Errorf("ERR Protocol Error: Invalid bulk string")
 	}
 
@@ -203,8 +180,8 @@ func parseArray(r *bufio.Reader) ( Value , error ){
 	}
 	if count == -1 {
 		return Value{
-			Type: Array,
-			Bulk: nil,
+			Type:  Array,
+			Array: nil,
 		}, nil
 	}
 
@@ -222,6 +199,3 @@ func parseArray(r *bufio.Reader) ( Value , error ){
 	}, nil
 
 }
-
-
-
