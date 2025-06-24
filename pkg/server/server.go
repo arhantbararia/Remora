@@ -33,6 +33,7 @@ func (s *Server) ListenAndServe() error {
 			log.Printf("accept error: %v", err)
 			continue
 		}
+		log.Printf("Client connected: %s", conn.RemoteAddr().String())
 
 		go handleConnection(conn)
 
@@ -48,9 +49,14 @@ func NewRemoraServer(host string, port string) *Server {
 	}
 }
 
+func connectionClose(conn net.Conn) {
+	log.Printf("Client disconnected: %s", conn.RemoteAddr().String())
+	conn.Close()
+}
+
 func handleConnection(conn net.Conn) {
 
-	defer conn.Close()
+	defer connectionClose(conn)
 
 	reader := bufio.NewReader(conn) //ex: ECHO "HELLO WORLD"
 	writer := bufio.NewWriter(conn)
@@ -99,10 +105,11 @@ func handleConnection(conn net.Conn) {
 		if !ok {
 			resp.WriteError(writer, resp.Value{
 				Type: resp.ErrorType,
-				Str:  "ERR Protocol Error: invalid format",
+				Str:  "ERR Protocol Error: invalid command",
 			})
 			writer.Flush()
-			return
+			continue
+
 		}
 
 		reply := handler(value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
@@ -110,7 +117,6 @@ func handleConnection(conn net.Conn) {
 
 		resp.WriteRESP(writer, reply)
 		writer.Flush()
-		return
 
 	}
 
