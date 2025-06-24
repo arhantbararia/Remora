@@ -6,11 +6,19 @@ import (
 	"io"
 	"log"
 	"net"
+	"remora/pkg/commands"
 	"remora/pkg/resp"
 	"strings"
 )
 
-func ListenAndServe(address string) error {
+type Server struct {
+	Host string
+	Port string
+}
+
+func (s *Server) ListenAndServe() error {
+
+	address := fmt.Sprintf("%v:%v", s.Host, s.Port)
 
 	//initialize the Listener
 	listener, err := net.Listen("tcp", address)
@@ -19,12 +27,10 @@ func ListenAndServe(address string) error {
 	}
 	defer listener.Close()
 
-	log.Printf("Remora Server listening on %s\n", address)
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("accept error: ", err)
+			log.Printf("accept error: %v", err)
 			continue
 		}
 
@@ -32,6 +38,14 @@ func ListenAndServe(address string) error {
 
 	}
 
+}
+
+func NewRemoraServer(host string, port string) *Server {
+
+	return &Server{
+		Host: host,
+		Port: port,
+	}
 }
 
 func handleConnection(conn net.Conn) {
@@ -85,21 +99,18 @@ func handleConnection(conn net.Conn) {
 		if !ok {
 			resp.WriteError(writer, resp.Value{
 				Type: resp.ErrorType,
-				Str: "ERR Protocol Error: invalid format"
+				Str:  "ERR Protocol Error: invalid format",
 			})
 			writer.Flush()
 			return
 		}
 
-		reply := handler[value.Array[1:]] // pass "$HELLO WORLD" to the ECHO handler function
+		reply := handler(value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
 		//reply is of type Value
 
 		resp.WriteRESP(writer, reply)
 		writer.Flush()
 		return
-		
-
-
 
 	}
 

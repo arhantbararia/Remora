@@ -32,7 +32,7 @@ func pingHandler(args []resp.Value ) resp.Value {
 }
 
 func init() {
-	register("PING", pingHandler)
+	Register("PING", pingHandler)
 }
 
 

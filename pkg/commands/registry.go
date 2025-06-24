@@ -11,30 +11,30 @@ type HandlerFunc func([]resp.Value) resp.Value
 
 
 var (
-	registry = make(map[string]HandlerFunc)
-	registryMu sync.RWMutex
+	Registry = make(map[string]HandlerFunc)
+	RegistryMu sync.RWMutex
 
 )
 
 
 func Register(command string, handler HandlerFunc) {
-	registryMu.Lock()
-	defer registryMu.Unlock()
+	RegistryMu.Lock()
+	defer RegistryMu.Unlock()
 
 	cmd := strings.ToUpper(command)
-	if _, exists := registry[cmd]; exists {
+	if _, exists := Registry[cmd]; exists {
 		panic("command already registered: " + cmd)
 	}
-	registry[cmd] = handler
+	Registry[cmd] = handler
 }
 
 
 
 func GetHandler(command string) (HandlerFunc, bool ) {
-	registryMu.RLock()
-	defer registryMu.RUnlock()
+	RegistryMu.RLock()
+	defer RegistryMu.RUnlock()
 
-	handler, ok := registry[strings.ToUpper(command)]
+	handler, ok := Registry[strings.ToUpper(command)]
 	return handler, ok
 
 }
