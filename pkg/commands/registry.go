@@ -2,20 +2,17 @@ package commands
 
 import (
 	"remora/pkg/resp"
+	"remora/pkg/store"
 	"strings"
 	"sync"
 )
 
-type HandlerFunc func([]resp.Value) resp.Value
-
-
+type HandlerFunc func(*store.Store, []resp.Value) resp.Value
 
 var (
-	Registry = make(map[string]HandlerFunc)
+	Registry   = make(map[string]HandlerFunc) 
 	RegistryMu sync.RWMutex
-
 )
-
 
 func Register(command string, handler HandlerFunc) {
 	RegistryMu.Lock()
@@ -26,16 +23,14 @@ func Register(command string, handler HandlerFunc) {
 		panic("command already registered: " + cmd)
 	}
 	Registry[cmd] = handler
+
 }
-
-
-
-func GetHandler(command string) (HandlerFunc, bool ) {
+func GetHandler(command string) (HandlerFunc, bool) {
 	RegistryMu.RLock()
 	defer RegistryMu.RUnlock()
 
 	handler, ok := Registry[strings.ToUpper(command)]
+
 	return handler, ok
 
 }
-

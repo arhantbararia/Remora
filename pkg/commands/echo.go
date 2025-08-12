@@ -1,8 +1,11 @@
 package commands
 
-import "remora/pkg/resp"
+import (
+	"remora/pkg/resp"
+	"remora/pkg/store"
+)
 
-func echoHandler(args []resp.Value) resp.Value {
+func echoHandler(store *store.Store, args []resp.Value) resp.Value {
 
 	if len(args) == 0 {
 		return resp.Value{

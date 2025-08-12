@@ -8,6 +8,7 @@ import (
 	"net"
 	"remora/pkg/commands"
 	"remora/pkg/resp"
+	"remora/pkg/store"
 	"strings"
 )
 
@@ -60,7 +61,7 @@ func handleConnection(conn net.Conn) {
 
 	reader := bufio.NewReader(conn) //ex: ECHO "HELLO WORLD"
 	writer := bufio.NewWriter(conn)
-
+	store := store.NewStore()
 	for {
 		// 1. Parse the next RESP message
 		value, err := resp.ParseRESP(reader) //ex: Value{Type: Array , Array: ["$ECHO", "$"HELLO WORLD""]}
@@ -101,7 +102,7 @@ func handleConnection(conn net.Conn) {
 
 		cmdName := strings.ToUpper(string(value.Array[0].Bulk)) //make command name ex. echo -> ECHO
 
-		handler, ok := commands.Registry[cmdName]
+		handler, ok := commands.GetHandler(cmdName) //get the handler function for the comman
 		if !ok {
 			resp.WriteError(writer, resp.Value{
 				Type: resp.ErrorType,
@@ -112,7 +113,7 @@ func handleConnection(conn net.Conn) {
 
 		}
 
-		reply := handler(value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
+		reply := handler(store, value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
 		//reply is of type Value
 
 		resp.WriteRESP(writer, reply)

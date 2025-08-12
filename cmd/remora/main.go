@@ -10,8 +10,8 @@ func main() {
 	//this is remora entrypoint
 	// port 1379
 	// address 127.0.0.1
-	PORT := "1379"
-	HOST := "127.0.0.1"
+	PORT := "3475"
+	HOST := "0.0.0.0"
 
 	fmt.Printf("Starting Remora Server on %v:%v \n", HOST, PORT)
 	server := server.NewRemoraServer(HOST, PORT)

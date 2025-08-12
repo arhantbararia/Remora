@@ -9,7 +9,7 @@ import (
 
 func parseFlags() (host, port *string) {
 	host = flag.String("host", "", "Remora Server address (default: localhost)")
-	port = flag.String("port", "", "Remora Server listening port (default: 1379)")
+	port = flag.String("port", "", "Remora Server listening port (default: 3475)")
 	help := flag.Bool("help", false, "Show help")
 
 	flag.Parse()
@@ -24,7 +24,7 @@ func parseFlags() (host, port *string) {
 	}
 
 	if *port == "" {
-		*port = "1379"
+		*port = "3475"
 	}
 	return host, port
 }

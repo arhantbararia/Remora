@@ -1,21 +1,24 @@
 package commands
 
-import "remora/pkg/resp"
+import (
+	"remora/pkg/resp"
+	"remora/pkg/store"
+)
 
-func pingHandler(args []resp.Value ) resp.Value {
+func pingHandler(store *store.Store, args []resp.Value) resp.Value {
 
-	switch(len(args)) {
+	switch len(args) {
 	case 0:
 		return resp.Value{
 			Type: resp.SimpleString,
-			Str: "PONG",
+			Str:  "PONG",
 		}
-	
+
 	case 1: //behave like echo
 		if args[0].Type != resp.BulkString {
 			return resp.Value{
 				Type: resp.ErrorType,
-				Str: "ERR: argument must be bulk string",
+				Str:  "ERR: argument must be bulk string",
 			}
 		}
 		return resp.Value{
@@ -25,14 +28,12 @@ func pingHandler(args []resp.Value ) resp.Value {
 	default:
 		return resp.Value{
 			Type: resp.ErrorType,
-			Str: "ERR: Wrong number of arguments for 'PING' ",
+			Str:  "ERR: Wrong number of arguments for 'PING' ",
 		}
 
 	}
 }
 
 func init() {
-	Register("PING", pingHandler)
+	Register("PING", pingHandler) // PING does not use store
 }
-
-
