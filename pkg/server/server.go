@@ -13,8 +13,9 @@ import (
 )
 
 type Server struct {
-	Host string
-	Port string
+	Host  string
+	Port  string
+	store *store.Store
 }
 
 func (s *Server) ListenAndServe() error {
@@ -36,7 +37,7 @@ func (s *Server) ListenAndServe() error {
 		}
 		log.Printf("Client connected: %s", conn.RemoteAddr().String())
 
-		go handleConnection(conn)
+		go s.handleConnection(conn)
 
 	}
 
@@ -45,8 +46,9 @@ func (s *Server) ListenAndServe() error {
 func NewRemoraServer(host string, port string) *Server {
 
 	return &Server{
-		Host: host,
-		Port: port,
+		Host:  host,
+		Port:  port,
+		store: store.NewStore(),
 	}
 }
 
@@ -55,13 +57,13 @@ func connectionClose(conn net.Conn) {
 	conn.Close()
 }
 
-func handleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 
 	defer connectionClose(conn)
 
 	reader := bufio.NewReader(conn) //ex: ECHO "HELLO WORLD"
 	writer := bufio.NewWriter(conn)
-	store := store.NewStore()
+	// store := store.NewStore()
 	for {
 		// 1. Parse the next RESP message
 		value, err := resp.ParseRESP(reader) //ex: Value{Type: Array , Array: ["$ECHO", "$"HELLO WORLD""]}
@@ -113,7 +115,7 @@ func handleConnection(conn net.Conn) {
 
 		}
 
-		reply := handler(store, value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
+		reply := handler(s.store, value.Array[1:]) // pass "$HELLO WORLD" to the ECHO handler function
 		//reply is of type Value
 
 		resp.WriteRESP(writer, reply)
