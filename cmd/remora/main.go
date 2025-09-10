@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os/signal"
 	"remora/pkg/server"
+	"syscall"
 )
 
 func main() {
@@ -13,15 +16,24 @@ func main() {
 	PORT := "3475"
 	HOST := "0.0.0.0"
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	fmt.Printf("Starting Remora Server on %v:%v \n", HOST, PORT)
 	server := server.NewRemoraServer(HOST, PORT)
 
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(fmt.Sprintf("Remora Server Error: %v", err))
-	}
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			panic(fmt.Sprintf("Remora Server Error: %v", err))
+		}
+	}()
 
 	//TO DO: Write Graceful shutdown route
+	<-ctx.Done()
+	fmt.Println("Shutting down Remora Server...")
+	server.Shutdown()
+
 
 	log.Println("Graceful shutdown complete")
 

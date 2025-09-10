@@ -10,12 +10,19 @@ import (
 	"remora/pkg/resp"
 	"remora/pkg/store"
 	"strings"
+	"time"
+)
+
+const (
+	maxConcurrentConnections = 1000
+	connectionReadTimeout    = 2 * time.Minute
 )
 
 type Server struct {
-	Host  string
-	Port  string
-	store *store.Store
+	Host      string
+	Port      string
+	store     *store.Store
+	semaphore chan struct{}
 }
 
 func (s *Server) ListenAndServe() error {
@@ -46,9 +53,10 @@ func (s *Server) ListenAndServe() error {
 func NewRemoraServer(host string, port string) *Server {
 
 	return &Server{
-		Host:  host,
-		Port:  port,
-		store: store.NewStore(),
+		Host:      host,
+		Port:      port,
+		store:     store.NewStore(),
+		semaphore: make(chan struct{}, maxConcurrentConnections),
 	}
 }
 
@@ -61,10 +69,20 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 	defer connectionClose(conn)
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic: %v", r)
+		}
+		connectionClose(conn)
+	}()
+
 	reader := bufio.NewReader(conn) //ex: ECHO "HELLO WORLD"
 	writer := bufio.NewWriter(conn)
 	// store := store.NewStore()
 	for {
+
+		conn.SetReadDeadline(time.Now().Add(connectionReadTimeout))
+
 		// 1. Parse the next RESP message
 		value, err := resp.ParseRESP(reader) //ex: Value{Type: Array , Array: ["$ECHO", "$"HELLO WORLD""]}
 		if err != nil {
